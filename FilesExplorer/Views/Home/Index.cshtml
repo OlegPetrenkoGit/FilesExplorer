@@ -1,0 +1,28 @@
+﻿@using FilesExplorer.Models
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    <h1>ASP.NET</h1>
+
+    @{
+        var nodes = new TreeNode().Nodes;
+
+        foreach (DriveNode driveNode in nodes)
+        {
+            <p>name= @driveNode.Name + path= + @driveNode.Path</p>
+
+            foreach (DirectoryNode directoryNode in driveNode.Directories)
+            {
+                <p>name= @directoryNode.Name + path= + @directoryNode.Path</p>
+
+                foreach (FileNode fileNode in directoryNode.Files)
+                {
+                    <p>name= @fileNode.Name + path= + @fileNode.Path</p>
+                }
+            }
+        }
+    }
+</div>
