@@ -6,33 +6,120 @@
 
     <script src="Scripts/angular.min.js"></script>
     <script src="Scripts/jquery-2.1.4.min.js"></script>
+
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <link href="Content/index.css" rel="stylesheet" />
 </head>
 <body ng-controller="nodeController">
+    <div ng-model="currentPath">Current directory: {{currentPath}}</div>
 
-    <!--
-    Search <input type="text" ng-model="search.$" />
-    <br />
-    -->
+    <div ng-model="counters"><= 10mb files: <value>{{counters.less}}</value></div>
+    <div ng-model="counters">> 10mb and <= 50 files: <value>{{counters.between}}</value></div>
+    <div ng-model="counters">>= 100mb files: <value>{{counters.more}}</value></div>
+
+    <div>Browse:</div>
 
     <div class="node-table">
-        <div ng-repeat="node in nodeTree | filter: search | orderBy : 'Name'">
-            <div class="node-item" ng-click="selectNode(node)">{{node.Name}}</div>
+        <button class="goback"
+                ng-disabled="{{buttonGoBackDisabled}}"
+                ng-click="GoUpperNode()">
+            &#8593;
+        </button>
+
+        <div class="node-item"
+             ng-repeat="node in nodeTree | filter: search | orderBy : '!IsDirectory'"
+             ng-class="node.Type == 'directory' ? 'directory' : (node.Type == 'file' ? 'file' : 'drive')"
+             ng-mouseover="setHoveredNode($index)">
+            <span ng-click="selectNode(node)">{{node.Name}}</span>
         </div>
     </div>
 
     <script type="text/javascript">
+        var apiAddress = 'http://localhost:63319/api/node/';
+
         var filesExplorerApp = angular.module('filesExplorerApp', []);
         filesExplorerApp.controller('nodeController', function ($scope, $http) {
-            $http.get('http://localhost:63319/api/node').success(function (response) {
+            $http.get(apiAddress).success(function (response) {
                 $scope.nodeTree = response;
 
-                $scope.selectNode = function (node) {
-                    console.log(node);
+                $scope.UpdateTree = function (json) {
+                    var newNodeTree = $scope.nodeTree;
+                    $scope.nodeTree = [];
 
-                    $scope.nodeTree = node;
-                };
-            })
+                    angular.forEach(json.data, function (i) {
+                        $scope.nodeTree.push(i);
+                    });
+                }
+
+                $scope.currentNode = null;
+                $scope.buttonGoBackDisabled = true;
+
+                $scope.selectNode = function (node) {
+                    $scope.buttonGoBackDisabled = (node.ParentPath == null);
+
+                    if (node.Type == "directory" || node.Type == "drive") {
+                        $scope.currentNode = node;
+
+                        $http({
+                            method: 'POST',
+                            url: apiAddress,
+                            data: encodeURIComponent(node.Path),
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                        }).then(function successCallback(response) {
+                            $scope.UpdateTree(response);
+                        }, function errorCallback(response) {
+                            alert("error");
+                        });
+                    }
+                }
+
+                $scope.GoUpperNode = function () {
+                    if ($scope.currentNode.Type == "drive") {
+                        $http({
+                            method: 'GET',
+                            url: apiAddress,
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                        }).then(function successCallback(response) {
+                            $scope.UpdateTree(response);
+                        }, function errorCallback(response) {
+                            alert("error");
+                        });
+                    }
+                    else {
+                        $http({
+                            method: 'POST',
+                            url: apiAddress,
+                            data: encodeURIComponent($scope.currentNode.ParentPath),
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                        }).then(function successCallback(response) {
+                            $scope.UpdateTree(response);
+                        }, function errorCallback(response) {
+                            alert("error");
+                        });
+                    }
+
+                    $scope.buttonGoBackDisabled = (node.ParentPath == null);
+                }
+
+                $scope.hoveredNode = -1;
+
+                $scope.setHoveredNode = function (index) {
+                    if ($scope.hoveredNode === index) {
+                        $scope.hoveredNode = -1;
+                    } else {
+                        $scope.hoveredNode = index;
+                    }
+                }
+
+                $scope.getClass = function (index) {
+                    if (index === $scope.selectedIndex) {
+                        return "selected";
+                    } else {
+                        return "";
+                    }
+                }
+            }
+            );
         });
     </script>
 </body>

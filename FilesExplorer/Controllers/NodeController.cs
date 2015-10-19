@@ -1,6 +1,8 @@
 ﻿using FilesExplorer.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Web;
 using System.Web.Http;
 
 namespace FilesExplorer.Controllers
@@ -10,30 +12,26 @@ namespace FilesExplorer.Controllers
         // GET: api/Node
         public IEnumerable<Node> Get()
         {
-            var nodesList = new NodeModel().GetNodes(@"c:\");
+            var nodesList = new NodeModel().GetDrives();
             return nodesList.AsEnumerable();
         }
 
-        // GET: api/Node/c:\
+        // GET: api/Node/
         public IEnumerable<Node> Get(string path)
         {
-            var nodesList = new NodeModel().GetNodes(path);
+            var decodedPath = HttpUtility.UrlDecode(path);
+
+            var nodesList = new NodeModel().GetNodes(decodedPath);
             return nodesList.AsEnumerable();
         }
 
-        // POST: api/Product
-        public void Post([FromBody]string value)
+        public IEnumerable<Node> Post(HttpRequestMessage request)
         {
-        }
+            var data = request.Content.ReadAsStringAsync().Result;
 
-        // PUT: api/Product/5
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE: api/Product/5
-        public void Delete(int id)
-        {
+            var decodedPath = HttpUtility.UrlDecode(data);
+            var nodesList = new NodeModel().GetNodes(decodedPath);
+            return nodesList.AsEnumerable();
         }
     }
 }

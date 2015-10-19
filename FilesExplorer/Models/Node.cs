@@ -1,173 +1,184 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FilesExplorer.Models
 {
-    public class Node
+    public enum NodeType
     {
-        public virtual string Name { get; set; }
-        public virtual string Path { get; set; }
+        Drive,
+        Directory,
+        File
+    }
 
-        public Node(string name, string path)
+    public class NodeFactory
+    {
+        public static Node Create(string path)
         {
-            Name = name;
-            Path = path;
+            var node = new Node();
+
+            if (IsDirectory(path))
+            {
+                node.Name = GetDirectoryName(path);
+                node.Path = GetDirectoryPath(path);
+                node.ParentPath = GetParentDirectoryPath(path);
+                node.Type = Node.DirectoryTypeName;
+            }
+            else
+            {
+                node.Name = Path.GetFileName(path);
+                node.Path = path;
+                node.ParentPath = GetFileDirectoryPath(path);
+                node.Type = Node.FileTypeName;
+            }
+
+            return node;
         }
 
-        protected static bool IsHidden(FileSystemInfo fileSystemInfo)
+        public static Node CreateDrive(DriveInfo driveInfo)
+        {
+            var driveNode = new Node()
+            {
+                Name = driveInfo.Name,
+                Path = driveInfo.RootDirectory.FullName,
+                ParentPath = null,
+                Type = Node.DriveTypeName
+            };
+
+            return driveNode;
+        }
+
+        public static bool IsDirectory(string path)
+        {
+            FileAttributes fileAttributes = File.GetAttributes(path);
+            return fileAttributes.HasFlag(FileAttributes.Directory);
+        }
+
+        private static string GetDirectoryName(string path)
+        {
+            return new DirectoryInfo(path).Name;
+        }
+
+        private static string GetDirectoryPath(string path)
+        {
+            return new DirectoryInfo(path).FullName;
+        }
+
+        private static string GetFileDirectoryPath(string path)
+        {
+            return Path.GetDirectoryName(path);
+        }
+
+        private static string GetParentDirectoryPath(string path)
+        {
+            var directoryInfo = new DirectoryInfo(path);
+
+            if (directoryInfo.Parent != null)
+            {
+                return directoryInfo.Parent.FullName;
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
+
+    public class Node
+    {
+        public const string DriveTypeName = "drive";
+        public const string DirectoryTypeName = "directory";
+        public const string FileTypeName = "file";
+
+        public string ParentPath { get; set; }
+        public string Path { get; set; }
+        public string Name { get; set; }
+        public string Type { get; set; }
+
+        public static bool IsHidden(FileSystemInfo fileSystemInfo)
         {
             return (fileSystemInfo.Attributes & FileAttributes.Hidden) != 0;
         }
 
-        //public static List<Node> GetAllNodes()
-        //{
-
-
-
-        //    DirectoryInfo rootDirectoryInfo = new DirectoryInfo(path);
-        //    DirectoryInfo[] subDirectoryInfos = rootDirectoryInfo.GetDirectories();
-        //    foreach (DirectoryInfo directoryInfo in subDirectoryInfos)
-        //    {
-        //        if (!IsHidden(directoryInfo))
-        //        {
-        //            var newDirectoryNode = new DirectoryNode(directoryInfo);
-        //            nodes.Add(newDirectoryNode);
-        //        }
-        //    }
-
-        //    var rootDirectoryFileInfos = rootDirectoryInfo.EnumerateFiles();
-        //    foreach (FileInfo fileInfo in rootDirectoryFileInfos)
-        //    {
-        //        if (!IsHidden(fileInfo))
-        //        {
-        //            var newFileNode = new FileNode(fileInfo);
-        //            nodes.Add(newFileNode);
-        //        }
-        //    }
-
-        //    return nodes;
-        //}
-    }
-
-    public class DriveNode : Node
-    {
-        private DriveInfo driveInfo;
-
-        public override string Name { get { return driveInfo.Name; } }
-        public override string Path { get { return driveInfo.RootDirectory.FullName; } }
-        public List<DirectoryNode> Directories { get; }
-
-        public DriveNode(DriveInfo driveInfo) : base(driveInfo.Name, driveInfo.RootDirectory.FullName)
+        public static bool IsEmpty(string path)
         {
-            this.driveInfo = driveInfo;
+            return !Directory.EnumerateFileSystemEntries(path).Any();
+        }
 
-            var directories = new List<DirectoryNode>();
+        public static bool HasFiles(Node node)
+        {
+            Func<FileAttributes, bool> isFileNotHidden = (FileAttributes fileAttributes) => (fileAttributes & FileAttributes.Hidden) == 0;
 
-            DirectoryInfo rootDirectoryInfo = new DirectoryInfo(driveInfo.RootDirectory.FullName);
-            DirectoryInfo[] subDirectoryInfos = rootDirectoryInfo.GetDirectories();
-            foreach (DirectoryInfo directoryInfo in subDirectoryInfos)
-            {
-                if (!IsHidden(directoryInfo))
-                {
-                    var newDirectoryNode = new DirectoryNode(directoryInfo);
-                    directories.Add(newDirectoryNode);
-                }
-            }
+            return (from file in Directory.EnumerateFiles(node.Path)
+                    where isFileNotHidden(new FileInfo(file).Attributes)
+                    select file).Any();
+        }
 
-            Directories = directories;
+        public override string ToString()
+        {
+            return Path;
         }
     }
 
-    public class DirectoryNode : Node
+    public class DirectoryNodes
     {
-        private DirectoryInfo directoryInfo;
-
-        public override string Name { get { return directoryInfo.Name; } }
-        public override string Path { get { return directoryInfo.FullName; } }
-        public List<FileNode> Files { get; }
-
-        public DirectoryNode(DirectoryInfo directoryInfo) : base(directoryInfo.Name, directoryInfo.FullName)
+        public static List<Node> GetDrives()
         {
-            this.directoryInfo = directoryInfo;
+            var driveNodes = new List<Node>();
 
-            var files = new List<FileNode>();
-
-            var rootDirectoryFileInfos = directoryInfo.EnumerateFiles();
-            foreach (FileInfo fileInfo in rootDirectoryFileInfos)
+            var driveInfos = DriveInfo.GetDrives();
+            foreach (var driveInfo in driveInfos)
             {
-                if (!IsHidden(fileInfo))
+                var driveNode = NodeFactory.CreateDrive(driveInfo);
+                driveNodes.Add(driveNode);
+            }
+
+            return driveNodes;
+        }
+
+        public static List<Node> GetChildren(string path)
+        {
+            var node = NodeFactory.Create(path);
+
+            var childrenNodes = new List<Node>();
+
+            if (NodeFactory.IsDirectory(node.Path))
+            {
+                DirectoryInfo rootDirectoryInfo = new DirectoryInfo(node.Path);
+                //   try
                 {
-                    var newFileNode = new FileNode(fileInfo);
-                    files.Add(newFileNode);
+                    DirectoryInfo[] subDirectoryInfos = rootDirectoryInfo.GetDirectories();
+
+                    foreach (DirectoryInfo directoryInfo in subDirectoryInfos)
+                    {
+                        if (!Node.IsHidden(directoryInfo))
+                        {
+                            Node newDirectoryNode = NodeFactory.Create(directoryInfo.FullName);
+                            childrenNodes.Add(newDirectoryNode);
+                        }
+                    }
+                }
+                //  catch (UnauthorizedAccessException) { }
+            }
+
+            if (Node.HasFiles(node))
+            {
+                var parentDirectoryInfo = new DirectoryInfo(node.Path);
+
+                var rootDirectoryFileInfos = parentDirectoryInfo.EnumerateFiles();
+                foreach (FileInfo fileInfo in rootDirectoryFileInfos)
+                {
+                    if (!Node.IsHidden(fileInfo))
+                    {
+                        Node newFileNode = NodeFactory.Create(fileInfo.FullName);
+                        childrenNodes.Add(newFileNode);
+                    }
                 }
             }
 
-            Files = files;
-        }
-    }
-
-    public class FileNode : Node
-    {
-        private FileInfo fileInfo;
-
-        public override string Name { get { return fileInfo.Name; } }
-        public override string Path { get { return fileInfo.FullName; } }
-
-        public long Size { get { return fileInfo.Length; } } //bytes
-
-        public FileNode(FileInfo fileInfo) : base(fileInfo.Name, fileInfo.FullName)
-        {
-            this.fileInfo = fileInfo;
-        }
-    }
-
-    public class TreeNode
-    {
-        public List<Node> Nodes { get; }
-
-        public TreeNode()
-        {
-            Nodes = GetNodes();
+            return childrenNodes;
         }
 
-        private List<Node> GetNodes()
-        {
-            List<Node> nodes = new List<Node>();
-
-            var drivesInfo = DriveInfo.GetDrives();
-
-            foreach (DriveInfo driveInfo in drivesInfo)
-            {
-                var newDriveInfo = new DriveNode(driveInfo);
-                nodes.Add(newDriveInfo);
-            }
-
-            return nodes;
-
-            /*
-
-            DirectoryInfo rootDirectoryInfo = new DirectoryInfo(path);
-            DirectoryInfo[] subDirectoryInfos = rootDirectoryInfo.GetDirectories();
-            foreach (DirectoryInfo directoryInfo in subDirectoryInfos)
-            {
-                if (!IsHidden(directoryInfo))
-                {
-                    var newDirectoryNode = new DirectoryNode(directoryInfo);
-                    nodes.Add(newDirectoryNode);
-                }
-            }
-
-            var rootDirectoryFileInfos = rootDirectoryInfo.EnumerateFiles();
-            foreach (FileInfo fileInfo in rootDirectoryFileInfos)
-            {
-                if (!IsHidden(fileInfo))
-                {
-                    var newFileNode = new FileNode(fileInfo);
-                    nodes.Add(newFileNode);
-                }
-            }
-
-           */
-        }
     }
 }

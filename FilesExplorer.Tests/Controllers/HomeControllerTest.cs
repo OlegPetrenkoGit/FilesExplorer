@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Web.Mvc;
+﻿using FilesExplorer.Controllers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FilesExplorer;
-using FilesExplorer.Controllers;
+using System.Web.Mvc;
 
 namespace FilesExplorer.Tests.Controllers
 {

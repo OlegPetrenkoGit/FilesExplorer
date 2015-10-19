@@ -1,27 +1,68 @@
-﻿@color-node-background-1: #EEEEEE;
-@color-node-background-2: #DDDDDD;
-@color-node-highlight-line: #4285F4;
+﻿@color-node-background-1: #efefef;
+@color-node-background-2: #dfdfdf;
+@color-node-highlight-line: #323232;
+@color-drive: #bbf;
+@color-directory: #f1c40f;
+@color-file: #ccc;
+
+@font: Open Sans, sans-serif;
+
+@height-node-item: 28px;
+
+body {
+    font-family: @font;
+}
+
+span {
+    color: #111;
+}
 
 .node-table {
-
-    div:nth-child(odd) > div {
-        background-color: @color-node-background-1;
+    .drive span {
+        background-color: @color-drive;
     }
 
-    div:nth-child(even) > div {
-        background-color: @color-node-background-2;
+    .directory span {
+        background-color: @color-directory;
     }
 
-
+    .file span {
+        background-color: @color-file;
+    }
+    
     .node-item {
-        width: 200px;
-        padding-left: 3px;
-        //   background-color: @color-node-background;
-        &:hover {
-            cursor: pointer;
-            -webkit-box-shadow: inset 0 -1px 0 0 @color-node-highlight-line;
-            -moz-box-shadow: inset 0 -1px 0 0 @color-node-highlight-line;
-            box-shadow: inset 0 -1px 0 0 @color-node-highlight-line;
+        margin-bottom: 5px;
+
+        span {
+            padding: 0 10px;
+
+            &:hover {
+                cursor: pointer;
+                -webkit-box-shadow: inset 0 -2px 0 0 @color-node-highlight-line;
+                -moz-box-shadow: inset 0 -2px 0 0 @color-node-highlight-line;
+                box-shadow: inset 0 -2px 0 0 @color-node-highlight-line;
+            }
         }
+    }
+}
+
+.hover {
+    cursor: default;
+    color: red;
+    font-weight: bold;
+}
+
+.goback {
+    width: 100px;
+    height: @height-node-item;
+    line-height: @height-node-item - 2;
+    text-align: center;
+    background-color: #eeeeee;
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 5px;
+
+    &:hover {
+        cursor: pointer;
     }
 }
