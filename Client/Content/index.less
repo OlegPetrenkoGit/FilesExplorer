@@ -8,6 +8,7 @@
 @font: Open Sans, sans-serif;
 
 @height-node-item: 28px;
+@margin-elements: 7px;
 
 body {
     font-family: @font;
@@ -17,18 +18,16 @@ span {
     color: #111;
 }
 
+.current-directory{
+    margin-bottom: @margin-elements;
+}
+
+.value {
+    font-weight: bold;
+}
+
 .node-table {
-    .drive span {
-        background-color: @color-drive;
-    }
-
-    .directory span {
-        background-color: @color-directory;
-    }
-
-    .file span {
-        background-color: @color-file;
-    }
+    margin-top: 8px;
 
     .node-item {
         margin-bottom: 5px;
@@ -52,6 +51,19 @@ span {
                 }
             }
         }
+    }
+
+    .drive span {
+        background-color: @color-drive;
+    }
+
+    .directory span {
+        background-color: @color-directory;
+    }
+
+    .file span {
+        background-color: @color-file;
+        cursor: default !important;
     }
 }
 

@@ -5,21 +5,24 @@
     <title>FilesExplorer</title>
 
     <script src="Scripts/angular.min.js"></script>
+    <script src="Scripts/Business/app.js"></script>
+    <script src="Scripts/Business/nodeController.js"></script>
+
     <script src="Scripts/jquery-2.1.4.min.js"></script>
 
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <link href="Content/index.css" rel="stylesheet" />
 </head>
 <body ng-controller="nodeController">
-    <div ng-model="currentPath">Current directory: {{currentPath}}</div>
+    <div class="current-directory" ng-model="currentPath">Current directory: <span class="value">{{currentPath}}</span></div>
 
-    <div ng-model="counters"><= 10mb files: <value>{{counters.less}}</value></div>
-    <div ng-model="counters">> 10mb and <= 50 files: <value>{{counters.between}}</value></div>
-    <div ng-model="counters">>= 100mb files: <value>{{counters.more}}</value></div>
-
-    <div>Browse:</div>
+    <div class="counter" ng-model="counters"><= 10 Mb count: <span class="value">{{filters.less}}</span></div>
+    <div class="counter" ng-model="counters">> 10 Mb and <= 50 Mb count: <span class="value">{{filters.between}}</span></div>
+    <div class="counter" ng-model="counters">>= 100 Mb count: <span class="value">{{filters.more}}</span></div>
 
     <div class="node-table">
+        <div>Browse:</div>
+
         <button class="goback"
                 ng-disabled="buttonGoBackDisabled"
                 ng-click="GoParentNode()">
@@ -34,123 +37,5 @@
             </span>
         </div>
     </div>
-
-    <script type="text/javascript">
-
-        function bytesToSize(bytes) {
-            var sizes = ['bytes', 'Kb', 'Mb', 'Gb'];
-
-            if (bytes == 0) {
-                return '0 bytes';
-            }
-
-            var order = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-            return Math.round(bytes / Math.pow(1024, order), 2) + ' ' + sizes[order];
-        };
-
-        var apiAddress = 'http://localhost:63319/api/node/';
-
-        var filesExplorerApp = angular.module('filesExplorerApp', []);
-        filesExplorerApp.controller('nodeController', function ($scope, $http) {
-            $http.get(apiAddress).success(function (response) {
-                $scope.nodeTree = response;
-               
-                $scope.filters = [less = 0,
-                                  between = 0,
-                                  more = 0]
-
-                $scope.filtersReset = function () {
-                    $scope.filters.less = 0;
-                    $scope.filters.between = 0;
-                    $scope.filters.more = 0;
-                }
-
-                $scope.filterFileSize = function (node) {
-
-                    var size = node.Size;
-                    var borders = ['10mb' = 10000000,
-                                   '50mb' = 50000000,
-                                   '100mb' = 100000000] 
-
-                    if (size <= borders['10mb'])
-                    {
-                        $scope.filters.less++;
-                    }
-                    else if (borders['10mb'] > size && size <= borders['50mb'])
-                    {
-                        $scope.filters.between++;
-                    }
-                    else
-                    {
-                        $scope.filters.more++;
-                    }
-                }
-
-                $scope.UpdateTree = function (json) {
-                    var newNodeTree = $scope.nodeTree;
-                    $scope.nodeTree = [];
-
-                    $scope.filtersReset();
-
-                    angular.forEach(json.data, function (i) {
-                        if (i.Type == "file") {
-                            $scope.filterFileSize(i);
-                                i.Size = bytesToSize(i.Size);
-                        }
-
-                        $scope.nodeTree.push(i);
-                    });
-                }
-
-                $scope.currentNode = null;
-                $scope.buttonGoBackDisabled = true;
-
-                $scope.SelectNode = function (node) {
-                    $scope.buttonGoBackDisabled = false;
-
-                    if (node.Type == "directory" || node.Type == "drive") {
-                        $scope.currentNode = node;
-
-                        var jsondata = JSON.stringify(node);
-
-                        $http({
-                            method: 'POST',
-                            url: apiAddress,
-                            data: jsondata,
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                        }).then(function successCallback(response) {
-                            $scope.UpdateTree(response);
-                        }, function errorCallback(response) {
-                            alert("error");
-                        });
-                    }
-                }
-
-                $scope.GoParentNode = function () {
-                    if ($scope.currentNode.Type == "drive") {
-                        $scope.buttonGoBackDisabled = true;
-
-                        $http({
-                            method: 'GET',
-                            url: apiAddress,
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                        }).then(function successCallback(response) {
-                            $scope.UpdateTree(response);
-                        }, function errorCallback(response) {
-                            alert("error");
-                        });
-                    }
-                    else {
-                        var node = $scope.currentNode.Parent;
-                        $scope.buttonGoBackDisabled = true;
-
-                        $scope.SelectNode(node);
-                    }
-                }
-            }
-            );
-        });
-    </script>
 </body>
-
 </html>

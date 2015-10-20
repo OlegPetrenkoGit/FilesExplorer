@@ -1,0 +1,1 @@
+﻿var filesExplorerApp = angular.module('filesExplorerApp', []);

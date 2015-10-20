@@ -4,14 +4,14 @@
 span {
   color: #111;
 }
-.node-table .drive span {
-  background-color: #bbf;
+.current-directory {
+  margin-bottom: 7px;
 }
-.node-table .directory span {
-  background-color: #f1c40f;
+.value {
+  font-weight: bold;
 }
-.node-table .file span {
-  background-color: #ccc;
+.node-table {
+  margin-top: 8px;
 }
 .node-table .node-item {
   margin-bottom: 5px;
@@ -31,6 +31,16 @@ span {
 }
 .node-table .node-item span .size:hover {
   box-shadow: none;
+}
+.node-table .drive span {
+  background-color: #bbf;
+}
+.node-table .directory span {
+  background-color: #f1c40f;
+}
+.node-table .file span {
+  background-color: #ccc;
+  cursor: default !important;
 }
 .hover {
   cursor: default;
