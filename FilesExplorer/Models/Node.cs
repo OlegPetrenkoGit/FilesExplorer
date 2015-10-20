@@ -14,7 +14,7 @@ namespace FilesExplorer.Models
 
     public class NodeFactory
     {
-        public static Node Create(string path)
+        public static Node Create(string path, Node parent)
         {
             var node = new Node();
 
@@ -22,14 +22,15 @@ namespace FilesExplorer.Models
             {
                 node.Name = GetDirectoryName(path);
                 node.Path = GetDirectoryPath(path);
-                node.ParentPath = GetParentDirectoryPath(path);
+                node.Parent = parent;
                 node.Type = Node.DirectoryTypeName;
             }
             else
             {
+                node = new FileNode();
+                node.Parent = parent;
                 node.Name = Path.GetFileName(path);
                 node.Path = path;
-                node.ParentPath = GetFileDirectoryPath(path);
                 node.Type = Node.FileTypeName;
             }
 
@@ -42,7 +43,7 @@ namespace FilesExplorer.Models
             {
                 Name = driveInfo.Name,
                 Path = driveInfo.RootDirectory.FullName,
-                ParentPath = null,
+                Parent = null,
                 Type = Node.DriveTypeName
             };
 
@@ -91,7 +92,7 @@ namespace FilesExplorer.Models
         public const string DirectoryTypeName = "directory";
         public const string FileTypeName = "file";
 
-        public string ParentPath { get; set; }
+        public Node Parent { get; set; }
         public string Path { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
@@ -121,6 +122,18 @@ namespace FilesExplorer.Models
         }
     }
 
+    public class FileNode : Node
+    {
+        public long Size
+        {
+            get
+            {
+                var fileInfo = new FileInfo(Path);
+                return fileInfo.Length;
+            }
+        }
+    }
+
     public class DirectoryNodes
     {
         public static List<Node> GetDrives()
@@ -137,10 +150,8 @@ namespace FilesExplorer.Models
             return driveNodes;
         }
 
-        public static List<Node> GetChildren(string path)
+        public static List<Node> GetChildren(Node node)
         {
-            var node = NodeFactory.Create(path);
-
             var childrenNodes = new List<Node>();
 
             if (NodeFactory.IsDirectory(node.Path))
@@ -154,7 +165,7 @@ namespace FilesExplorer.Models
                     {
                         if (!Node.IsHidden(directoryInfo))
                         {
-                            Node newDirectoryNode = NodeFactory.Create(directoryInfo.FullName);
+                            Node newDirectoryNode = NodeFactory.Create(directoryInfo.FullName, parent: node);
                             childrenNodes.Add(newDirectoryNode);
                         }
                     }
@@ -171,7 +182,7 @@ namespace FilesExplorer.Models
                 {
                     if (!Node.IsHidden(fileInfo))
                     {
-                        Node newFileNode = NodeFactory.Create(fileInfo.FullName);
+                        Node newFileNode = NodeFactory.Create(fileInfo.FullName, parent: node);
                         childrenNodes.Add(newFileNode);
                     }
                 }
@@ -179,6 +190,5 @@ namespace FilesExplorer.Models
 
             return childrenNodes;
         }
-
     }
 }

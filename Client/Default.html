@@ -21,32 +21,83 @@
 
     <div class="node-table">
         <button class="goback"
-                ng-disabled="{{buttonGoBackDisabled}}"
-                ng-click="GoUpperNode()">
+                ng-disabled="buttonGoBackDisabled"
+                ng-click="GoParentNode()">
             &#8593;
         </button>
 
         <div class="node-item"
              ng-repeat="node in nodeTree | filter: search | orderBy : '!IsDirectory'"
-             ng-class="node.Type == 'directory' ? 'directory' : (node.Type == 'file' ? 'file' : 'drive')"
-             ng-mouseover="setHoveredNode($index)">
-            <span ng-click="selectNode(node)">{{node.Name}}</span>
+             ng-class="node.Type == 'directory' ? 'directory' : (node.Type == 'file' ? 'file' : 'drive')">
+            <span ng-click="SelectNode(node)">
+                {{node.Name}} <span class="size">{{node.Size}}</span>
+            </span>
         </div>
     </div>
 
     <script type="text/javascript">
+
+        function bytesToSize(bytes) {
+            var sizes = ['bytes', 'Kb', 'Mb', 'Gb'];
+
+            if (bytes == 0) {
+                return '0 bytes';
+            }
+
+            var order = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+            return Math.round(bytes / Math.pow(1024, order), 2) + ' ' + sizes[order];
+        };
+
         var apiAddress = 'http://localhost:63319/api/node/';
 
         var filesExplorerApp = angular.module('filesExplorerApp', []);
         filesExplorerApp.controller('nodeController', function ($scope, $http) {
             $http.get(apiAddress).success(function (response) {
                 $scope.nodeTree = response;
+               
+                $scope.filters = [less = 0,
+                                  between = 0,
+                                  more = 0]
+
+                $scope.filtersReset = function () {
+                    $scope.filters.less = 0;
+                    $scope.filters.between = 0;
+                    $scope.filters.more = 0;
+                }
+
+                $scope.filterFileSize = function (node) {
+
+                    var size = node.Size;
+                    var borders = ['10mb' = 10000000,
+                                   '50mb' = 50000000,
+                                   '100mb' = 100000000] 
+
+                    if (size <= borders['10mb'])
+                    {
+                        $scope.filters.less++;
+                    }
+                    else if (borders['10mb'] > size && size <= borders['50mb'])
+                    {
+                        $scope.filters.between++;
+                    }
+                    else
+                    {
+                        $scope.filters.more++;
+                    }
+                }
 
                 $scope.UpdateTree = function (json) {
                     var newNodeTree = $scope.nodeTree;
                     $scope.nodeTree = [];
 
+                    $scope.filtersReset();
+
                     angular.forEach(json.data, function (i) {
+                        if (i.Type == "file") {
+                            $scope.filterFileSize(i);
+                                i.Size = bytesToSize(i.Size);
+                        }
+
                         $scope.nodeTree.push(i);
                     });
                 }
@@ -54,16 +105,18 @@
                 $scope.currentNode = null;
                 $scope.buttonGoBackDisabled = true;
 
-                $scope.selectNode = function (node) {
-                    $scope.buttonGoBackDisabled = (node.ParentPath == null);
+                $scope.SelectNode = function (node) {
+                    $scope.buttonGoBackDisabled = false;
 
                     if (node.Type == "directory" || node.Type == "drive") {
                         $scope.currentNode = node;
 
+                        var jsondata = JSON.stringify(node);
+
                         $http({
                             method: 'POST',
                             url: apiAddress,
-                            data: encodeURIComponent(node.Path),
+                            data: jsondata,
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                         }).then(function successCallback(response) {
                             $scope.UpdateTree(response);
@@ -73,8 +126,10 @@
                     }
                 }
 
-                $scope.GoUpperNode = function () {
+                $scope.GoParentNode = function () {
                     if ($scope.currentNode.Type == "drive") {
+                        $scope.buttonGoBackDisabled = true;
+
                         $http({
                             method: 'GET',
                             url: apiAddress,
@@ -86,36 +141,10 @@
                         });
                     }
                     else {
-                        $http({
-                            method: 'POST',
-                            url: apiAddress,
-                            data: encodeURIComponent($scope.currentNode.ParentPath),
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-                        }).then(function successCallback(response) {
-                            $scope.UpdateTree(response);
-                        }, function errorCallback(response) {
-                            alert("error");
-                        });
-                    }
+                        var node = $scope.currentNode.Parent;
+                        $scope.buttonGoBackDisabled = true;
 
-                    $scope.buttonGoBackDisabled = (node.ParentPath == null);
-                }
-
-                $scope.hoveredNode = -1;
-
-                $scope.setHoveredNode = function (index) {
-                    if ($scope.hoveredNode === index) {
-                        $scope.hoveredNode = -1;
-                    } else {
-                        $scope.hoveredNode = index;
-                    }
-                }
-
-                $scope.getClass = function (index) {
-                    if (index === $scope.selectedIndex) {
-                        return "selected";
-                    } else {
-                        return "";
+                        $scope.SelectNode(node);
                     }
                 }
             }
@@ -123,4 +152,5 @@
         });
     </script>
 </body>
+
 </html>

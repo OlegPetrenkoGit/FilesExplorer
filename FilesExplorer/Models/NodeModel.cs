@@ -10,9 +10,9 @@ namespace FilesExplorer.Models
             return drivesList;
         }
 
-        public List<Node> GetNodes(string path)
+        public List<Node> GetNodes(Node node)
         {
-            var nodesList = DirectoryNodes.GetChildren(path);
+            var nodesList = DirectoryNodes.GetChildren(node);
             return nodesList;
         }
     }

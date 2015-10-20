@@ -1,37 +1,37 @@
 ﻿using FilesExplorer.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Web;
 using System.Web.Http;
+using System.Web.Script.Serialization;
 
 namespace FilesExplorer.Controllers
 {
     public class NodeController : ApiController
     {
-        // GET: api/Node
         public IEnumerable<Node> Get()
         {
             var nodesList = new NodeModel().GetDrives();
             return nodesList.AsEnumerable();
         }
 
-        // GET: api/Node/
-        public IEnumerable<Node> Get(string path)
+        public IEnumerable<Node> Post(HttpRequestMessage request)
         {
-            var decodedPath = HttpUtility.UrlDecode(path);
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
 
-            var nodesList = new NodeModel().GetNodes(decodedPath);
+            Node node = DeserializeObject<Node>(request);
+            var nodesList = new NodeModel().GetNodes(node);
             return nodesList.AsEnumerable();
         }
 
-        public IEnumerable<Node> Post(HttpRequestMessage request)
+        private T DeserializeObject<T>(HttpRequestMessage request)
         {
             var data = request.Content.ReadAsStringAsync().Result;
-
-            var decodedPath = HttpUtility.UrlDecode(data);
-            var nodesList = new NodeModel().GetNodes(decodedPath);
-            return nodesList.AsEnumerable();
+            return new JavaScriptSerializer().Deserialize<T>(data);
         }
     }
 }
