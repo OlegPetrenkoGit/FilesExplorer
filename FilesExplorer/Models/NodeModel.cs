@@ -6,14 +6,20 @@ namespace FilesExplorer.Models
     {
         public List<Node> GetDrives()
         {
-            var drivesList = DirectoryNodes.GetDrives();
+            var drivesList = new NodesCollection().GetDrives();
             return drivesList;
         }
 
         public List<Node> GetNodes(Node node)
         {
-            var nodesList = DirectoryNodes.GetChildren(node);
-            return nodesList;
+            var nodeResponse = new NodesCollection().GetNodes(node);
+            return nodeResponse;
+        }
+
+        public FileCounters GetCounters(Node node)
+        {
+            var counters = new FileCounters(node);
+            return counters;
         }
     }
 }
