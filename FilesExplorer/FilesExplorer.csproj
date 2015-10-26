@@ -155,17 +155,14 @@
   <ItemGroup>
     <Content Include="Content\index.css" />
     <Content Include="Content\index.min.css" />
-    <Content Include="Default.html" />
+    <Content Include="index.html" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Compile Include="Models\FileCounters.cs" />
     <Content Include="Scripts\angular.min.js" />
     <Content Include="Content\index.less" />
-    <None Include="Scripts\jquery-2.1.4.intellisense.js" />
     <Content Include="Scripts\Business\app.js" />
     <Content Include="Scripts\Business\nodeController.js" />
-    <Content Include="Scripts\jquery-2.1.4.js" />
-    <Content Include="Scripts\jquery-2.1.4.min.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -177,7 +174,6 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="packages.config" />
-    <Content Include="Scripts\jquery-2.1.4.min.map" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

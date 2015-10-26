@@ -51,7 +51,7 @@ public class FileCounters
             {
                 Less++;
             }
-            else if (tenmb > size && size <= fiftymb)
+            else if (tenmb < size && size <= fiftymb)
             {
                 Between++;
             }
